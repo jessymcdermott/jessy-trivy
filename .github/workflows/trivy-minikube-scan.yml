@@ -1,0 +1,52 @@
+name: Trivy Minikube Image Scan
+
+on:
+  workflow_dispatch:   # manually trigger it
+  schedule:
+    - cron: '0 12 * * *'  # optional daily scan
+
+jobs:
+  trivy-minikube-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.1
+
+      - name: Scan alpine image
+        run: trivy image --severity CRITICAL,HIGH alpine:3.12
+
+      - name: Scan DVWA image
+        run: trivy image --severity CRITICAL,HIGH vulnerables/web-dvwa
+
+      - name: Scan nginx image
+        run: trivy image --severity CRITICAL,HIGH nginx:1.21
+
+      - name: Scan node image
+        run: trivy image --severity CRITICAL,HIGH node:12
+
+      - name: Scan python image
+        run: trivy image --severity CRITICAL,HIGH python:3.4-alpine
+
+      - name: Generate JSON reports
+        if: always()
+        run: |
+          trivy image -f json -o trivy-report-alpine.json alpine:3.12
+          trivy image -f json -o trivy-report-dvwa.json vulnerables/web-dvwa
+          trivy image -f json -o trivy-report-nginx.json nginx:1.21
+          trivy image -f json -o trivy-report-node.json node:12
+          trivy image -f json -o trivy-report-python.json python:3.4-alpine
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-minikube-scan-results
+          path: |
+            trivy-report-alpine.json
+            trivy-report-dvwa.json
+            trivy-report-nginx.json
+            trivy-report-node.json
+            trivy-report-python.json
+
