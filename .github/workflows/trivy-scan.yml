@@ -1,29 +1,24 @@
-name: Trivy Image Scan
+name: Trivy scan workflow
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-  schedule:
-    - cron: "0 2 * * *"  # Optional daily scan
 
 jobs:
-  trivy:
+  trivy-scan:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Install Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          version: latest
+
+      - name: Scan image with Trivy
         run: |
-          sudo apt-get update
-          sudo apt-get install -y wget
-          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.0_Linux-64bit.deb
-          sudo dpkg -i trivy_0.50.0_Linux-64bit.deb
-
-      - name: Build Docker image
-        run: docker build -t myapp:latest .
-
-      - name: Scan with Trivy
-        run: trivy image --exit-code 1 --severity CRITICAL,HIGH myapp:latest
+          trivy image --severity CRITICAL,HIGH nginx:latest
 
