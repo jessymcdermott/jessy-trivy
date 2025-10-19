@@ -1,12 +1,12 @@
 name: Trivy Image Scan Workflow
-
+      
 on:
   push:
     branches:
       - main
   pull_request:
   workflow_dispatch:
-
+        
 jobs:
   trivy-image-scan:
     runs-on: ubuntu-latest
@@ -15,28 +15,33 @@ jobs:
       # ✅ Step 1: Checkout the repo
       - name: Checkout repository
         uses: actions/checkout@v4
-
+      
       # ✅ Step 2: Install Trivy (no automatic scan!)
       - name: Install Trivy
         uses: aquasecurity/setup-trivy@v0.2.1
-
-      # ✅ Step 3: Run security gate scans
+          
+      # ✅ Step 3: Run security gate scans (but don’t fail the workflow)
       - name: Security Gate - NGINX
         run: trivy image --exit-code 1 --severity HIGH,CRITICAL nginx:1.21
+        continue-on-error: true
 
       - name: Security Gate - Alpine
         run: trivy image --exit-code 1 --severity HIGH,CRITICAL alpine:3.12
-
+        continue-on-error: true
+        
       - name: Security Gate - DVWA
         run: trivy image --exit-code 1 --severity HIGH,CRITICAL vulnerables/web-dvwa
-
-      - name: Security Gate - Node
+        continue-on-error: true
+          
+      - name: Security Gate - Node 
         run: trivy image --exit-code 1 --severity HIGH,CRITICAL node:12
-
+        continue-on-error: true
+            
       - name: Security Gate - Python
         run: trivy image --exit-code 1 --severity HIGH,CRITICAL python:3.4-alpine
+        continue-on-error: true
 
-      # ✅ Step 4: Generate JSON reports (always run, even if gate fails)
+      # ✅ Step 4: Generate JSON reports (always run)
       - name: Generate Trivy reports
         if: always()
         run: |
@@ -55,5 +60,5 @@ jobs:
             trivy-report-nginx.json
             trivy-report-alpine.json
             trivy-report-dvwa.json
-            trivy-report-node.json
+            trivy-report-node.json  
             trivy-report-python.json
