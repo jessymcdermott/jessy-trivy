@@ -1,4 +1,4 @@
-name: Trivy scan workflow
+name: Trivy Image Scan Workflow
 
 on:
   push:
@@ -8,59 +8,52 @@ on:
   workflow_dispatch:
 
 jobs:
-  trivy-scan:
+  trivy-image-scan:
     runs-on: ubuntu-latest
 
     steps:
+      # ✅ Step 1: Checkout the repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ✅ Install Trivy CLI (no default scan)
+      # ✅ Step 2: Install Trivy (no automatic scan!)
       - name: Install Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          version: latest
+        uses: aquasecurity/setup-trivy@v0.2.1
 
-      # ------------------------------
-      # 🔸 Security Gate: NGINX
-      # ------------------------------
-      - name: Security Gate - Fail on HIGH or CRITICAL for NGINX
+      # ✅ Step 3: Run security gate scans
+      - name: Security Gate - NGINX
         run: trivy image --exit-code 1 --severity HIGH,CRITICAL nginx:1.21
 
-      # ------------------------------
-      # 📄 NGINX - Reports
-      # ------------------------------
-      - name: Scan NGINX image (JSON)
-        run: trivy image -f json -o nginx-report.json nginx:1.21
-
-      - name: Scan NGINX image (HTML)
-        run: trivy image -f template --template "@contrib/html.tpl" -o nginx-report.html nginx:1.21
-
-      # ------------------------------
-      # 🔸 Security Gate: Alpine
-      # ------------------------------
-      - name: Security Gate - Fail on HIGH or CRITICAL for Alpine
+      - name: Security Gate - Alpine
         run: trivy image --exit-code 1 --severity HIGH,CRITICAL alpine:3.12
 
-      # ------------------------------
-      # 📄 Alpine - Reports
-      # ------------------------------
-      - name: Scan Alpine image (JSON)
-        run: trivy image -f json -o alpine-report.json alpine:3.12
+      - name: Security Gate - DVWA
+        run: trivy image --exit-code 1 --severity HIGH,CRITICAL vulnerables/web-dvwa
 
-      - name: Scan Alpine image (HTML)
-        run: trivy image -f template --template "@contrib/html.tpl" -o alpine-report.html alpine:3.12
+      - name: Security Gate - Node
+        run: trivy image --exit-code 1 --severity HIGH,CRITICAL node:12
 
-      # ------------------------------
-      # 📤 Upload Reports
-      # ------------------------------
+      - name: Security Gate - Python
+        run: trivy image --exit-code 1 --severity HIGH,CRITICAL python:3.4-alpine
+
+      # ✅ Step 4: Generate JSON reports (always run, even if gate fails)
+      - name: Generate Trivy reports
+        if: always()
+        run: |
+          trivy image -f json -o trivy-report-nginx.json nginx:1.21
+          trivy image -f json -o trivy-report-alpine.json alpine:3.12
+          trivy image -f json -o trivy-report-dvwa.json vulnerables/web-dvwa
+          trivy image -f json -o trivy-report-node.json node:12
+          trivy image -f json -o trivy-report-python.json python:3.4-alpine
+
+      # ✅ Step 5: Upload the reports
       - name: Upload Trivy scan reports
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-scan-reports
+          name: trivy-scan-results
           path: |
-            nginx-report.json
-            nginx-report.html
-            alpine-report.json
-            alpine-report.html
-
+            trivy-report-nginx.json
+            trivy-report-alpine.json
+            trivy-report-dvwa.json
+            trivy-report-node.json
+            trivy-report-python.json
