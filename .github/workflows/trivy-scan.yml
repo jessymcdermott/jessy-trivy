@@ -16,30 +16,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      # ✅ Step 2: Install Trivy (no automatic scan!)
+      # ✅ Step 2: Install Trivy
       - name: Install Trivy
         uses: aquasecurity/setup-trivy@v0.2.1
           
-      # ✅ Step 3: Run security gate scans (but don’t fail the workflow)
-      - name: Security Gate - NGINX
-        run: trivy image --exit-code 1 --severity HIGH,CRITICAL nginx:1.21
-        continue-on-error: true
+      # ✅ Step 3: Non-blocking image scans (no exit codes at all)
+      - name: Trivy - NGINX
+        run: trivy image --severity HIGH,CRITICAL nginx:1.21
 
-      - name: Security Gate - Alpine
-        run: trivy image --exit-code 1 --severity HIGH,CRITICAL alpine:3.12
-        continue-on-error: true
+      - name: Trivy - Alpine
+        run: trivy image --severity HIGH,CRITICAL alpine:3.12
         
-      - name: Security Gate - DVWA
-        run: trivy image --exit-code 1 --severity HIGH,CRITICAL vulnerables/web-dvwa
-        continue-on-error: true
+      - name: Trivy - DVWA
+        run: trivy image --severity HIGH,CRITICAL vulnerables/web-dvwa
           
-      - name: Security Gate - Node 
-        run: trivy image --exit-code 1 --severity HIGH,CRITICAL node:12
-        continue-on-error: true
+      - name: Trivy - Node
+        run: trivy image --severity HIGH,CRITICAL node:12
             
-      - name: Security Gate - Python
-        run: trivy image --exit-code 1 --severity HIGH,CRITICAL python:3.4-alpine
-        continue-on-error: true
+      - name: Trivy - Python
+        run: trivy image --severity HIGH,CRITICAL python:3.4-alpine
 
       # ✅ Step 4: Generate JSON reports (always run)
       - name: Generate Trivy reports
