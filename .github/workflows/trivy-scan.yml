@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:   # 👈 allows manual trigger from GitHub UI
 
 jobs:
   trivy-scan:
@@ -18,22 +19,39 @@ jobs:
         with:
           version: latest
 
-      #anything w high/crit will be prevented when running 
-      - name: Security gate - Fail if HIGH or CRITICAL vulns in NGINX
+      # ------------------------------
+      # 🔸 Security Gate: NGINX
+      # ------------------------------
+      - name: Security Gate - Fail on HIGH or CRITICAL for NGINX
         run: trivy image --exit-code 1 --severity HIGH,CRITICAL nginx:1.21
 
+      # ------------------------------
+      # 📄 NGINX - Reports
+      # ------------------------------
       - name: Scan NGINX image (JSON)
         run: trivy image -f json -o nginx-report.json nginx:1.21
 
       - name: Scan NGINX image (HTML)
         run: trivy image -f template --template "@contrib/html.tpl" -o nginx-report.html nginx:1.21
 
+      # ------------------------------
+      # 🔸 Security Gate: Alpine
+      # ------------------------------
+      - name: Security Gate - Fail on HIGH or CRITICAL for Alpine
+        run: trivy image --exit-code 1 --severity HIGH,CRITICAL alpine:3.12
+
+      # ------------------------------
+      # 📄 Alpine - Reports
+      # ------------------------------
       - name: Scan Alpine image (JSON)
         run: trivy image -f json -o alpine-report.json alpine:3.12
 
       - name: Scan Alpine image (HTML)
         run: trivy image -f template --template "@contrib/html.tpl" -o alpine-report.html alpine:3.12
 
+      # ------------------------------
+      # 📤 Upload Reports
+      # ------------------------------
       - name: Upload Trivy scan reports
         uses: actions/upload-artifact@v4
         with:
