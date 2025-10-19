@@ -1,35 +1,93 @@
 name: Trivy Minikube Image Scan
 
 on:
-  workflow_dispatch:   # manually trigger it
+  workflow_dispatch:         # manually trigger it
   schedule:
-    - cron: '0 12 * * *'  # optional daily scan
+    - cron: '0 12 * * *'     # optional daily scan at 12:00 UTC
 
 jobs:
   trivy-minikube-scan:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ✅ Install Trivy CLI only (no automatic scan)
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.1
+        uses: aquasecurity/trivy-action@master
+        with:
+          version: latest
 
-      - name: Scan alpine image
-        run: trivy image --severity CRITICAL,HIGH alpine:3.12
+      # ------------------------------
+      # 🔸 Security Gates
+      # ------------------------------
 
-      - name: Scan DVWA image
-        run: trivy image --severity CRITICAL,HIGH vulnerables/web-dvwa
+name: Trivy Minikube Image Scan
 
-      - name: Scan nginx image
-        run: trivy image --severity CRITICAL,HIGH nginx:1.21
+on:
+  workflow_dispatch:         # manually trigger it
+  schedule:
+    - cron: '0 12 * * *'     # optional daily scan at 12:00 UTC
 
-      - name: Scan node image
-        run: trivy image --severity CRITICAL,HIGH node:12
+jobs:
+  trivy-minikube-scan:
+    runs-on: ubuntu-latest
 
-      - name: Scan python image
-        run: trivy image --severity CRITICAL,HIGH python:3.4-alpine
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
+      # ✅ Install Trivy CLI only (no automatic scan)
+      - name: Install Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          version: latest
+
+      # ------------------------------
+      # 🔸 Security Gates
+name: Trivy Minikube Image Scan
+
+on:
+  workflow_dispatch:         # manually trigger it
+  schedule:
+    - cron: '0 12 * * *'     # optional daily scan at 12:00 UTC
+
+jobs:
+  trivy-minikube-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ✅ Install Trivy CLI only (no automatic scan)
+      - name: Install Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          version: latest
+
+      # ------------------------------
+      # 🔸 Security Gates
+      # ------------------------------
+      - name: Security Gate - Alpine
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH alpine:3.12
+
+      - name: Security Gate - DVWA
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH vulnerables/web-dvwa
+
+      - name: Security Gate - NGINX
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH nginx:1.21
+
+      - name: Security Gate - Node
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH node:12
+
+      - name: Security Gate - Python
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH python:3.4-alpine
+
+      # ------------------------------
+      # 📄 Report Generation
+      # ------------------------------
       - name: Generate JSON reports
         if: always()
         run: |
@@ -39,7 +97,8 @@ jobs:
           trivy image -f json -o trivy-report-node.json node:12
           trivy image -f json -o trivy-report-python.json python:3.4-alpine
 
-      - name: Upload reports
+      - name: Upload Trivy scan reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: trivy-minikube-scan-results
